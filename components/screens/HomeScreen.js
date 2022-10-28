@@ -12,21 +12,35 @@ import Voice from "@react-native-voice/voice";
 import Icon from "react-native-vector-icons/FontAwesome";
 import { BASE_URL } from "../config";
 import axios from "axios";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-export default function HomeScreen() {
+export default function HomeScreen({ navigation }) {
   let [started, setStarted] = useState(false);
   let [results, setResults] = useState([]);
   const [info, setInfo] = useState(null);
   const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [color, setColor] = useState(false);
+  // true or false
 
-  const getData = () => {
-    axios
+  const getData = async () => {
+    setLoading(true);
+    await axios
       .get(BASE_URL)
-      .then((res) => {
+      .then(function (res) {
         const fetchData = res.data;
         setData(fetchData);
+        setLoading(false);
+        AsyncStorage.setItem("data", JSON.stringify(fetchData));
       })
-      .catch((err) => console.log(err));
+      .catch((err) => {
+        setLoading(false);
+        console.log(err);
+        navigation.navigate("ErrorScreen");
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   };
 
   useEffect(() => {
@@ -60,23 +74,106 @@ export default function HomeScreen() {
     console.log(error);
   };
 
-  //guarda los resultados en una variable
-  let text = results.map((result, index) => {
-    return result;
-  });
+  // //guarda los resultados en una variable
+  // let text = results.map((result, index) => {
+  //   return result;
+  // });
 
-  console.log(data);
+  // console.log(data);
+
+  //si el texto es igual a "usuarios" se ejecuta la funcion
+  if (info == "null") {
+    getData();
+  } else if (
+    info == "usuarios" ||
+    info == "usuario" ||
+    info == "user" ||
+    info == "Usuarios" ||
+    info == "Usuario" ||
+    info == "User"
+  ) {
+    //navega a la pantalla de resultados despues de 5 segundos y le pasa los resultados
+    navigation.navigate("Resultados");
+    setInfo(null);
+  } else if (info == "undefined") {
+    navigation.navigate("ErrorScreen");
+    setInfo(null);
+  }
+
+  //hace una comparacion y busqueda de coincidencias en la variable results
+  const search = () => {
+    let search = results.map((result, index) => {
+      return result;
+    });
+    let searchResult = data.filter((item) => {
+      return (
+        item.toLowerCase().includes("usuarios") ||
+        item.toLowerCase().includes("usuario")
+      );
+    });
+    if (searchResult.length > 0) {
+      setData(searchResult);
+    } else {
+      setData("undefined");
+    }
+  };
+
+  if (data == "null") {
+    getData();
+  } else if (data == {}) {
+    //navega a la pantalla de resultados despues de 5 segundos y le pasa los resultados
+    //lee los resultados y busca coincidencias
+    navigation.navigate("Resultados");
+    setData({});
+  } else if (data == "undefined") {
+    navigation.navigate("ErrorScreen");
+    setData({});
+  }
 
   return (
     <ScrollView
-      style={styles.scroll}
-      contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}
+      style={color ? styles.scroll : styles.scrollBlack}
+      contentContainerStyle={{
+        flexGrow: 1,
+        justifyContent: "center",
+        marginTop: 20,
+        alignContent: "center",
+        alignSelf: "center",
+      }}
     >
-      <View style={styles.container}>
-        <Text style={styles.title}>Busqueda por reconocimiento de Voz</Text>
-        <StatusBar style="auto" />
+      <View style={styles.header}>
         <TouchableOpacity
-          style={started ? styles.buttonStop : styles.button}
+          onPress={() => {
+            setColor(!color);
+          }}
+        >
+          <Icon
+            name={color ? "moon-o" : "sun-o"}
+            size={30}
+            color={color ? "black" : "white"}
+            style={{
+              alignSelf: "center",
+              alignContent: "center",
+              justifyContent: "center",
+            }}
+          />
+        </TouchableOpacity>
+      </View>
+      <View style={styles.container}>
+        <Text style={color ? styles.title : styles.titleBlack}>
+          Busqueda por reconocimiento de Voz
+        </Text>
+        <StatusBar style="dark" backgroundColor={color ? "#4169E1" : "white"} />
+        <TouchableOpacity
+          style={
+            color
+              ? started //si esta activo el boton cambia a rojo
+                ? styles.buttonStop
+                : styles.button
+              : started //si esta activo el boton cambia a rojo
+              ? styles.buttonStop
+              : styles.buttonBlack
+          }
           onPress={started ? stopSpeechToText : startSpeechToText}
         >
           <Text style={styles.buttonText}>
@@ -89,8 +186,10 @@ export default function HomeScreen() {
             style={styles.icon}
           />
         </TouchableOpacity>
-        <Text style={styles.hr} />
-        <Text style={styles.title}>Busqueda por escrito</Text>
+        <Text style={color ? styles.hr : styles.hrBlack} />
+        <Text style={color ? styles.title : styles.titleBlack}>
+          Busqueda por escrito
+        </Text>
         <TextInput
           style={styles.textInput}
           placeholder="Escribe aquí"
@@ -98,26 +197,14 @@ export default function HomeScreen() {
           value={info}
         />
         <TouchableOpacity
-          style={styles.button}
+          style={color ? styles.button : styles.buttonBlack}
           onPress={() => {
-            console.log(info);
+            navigation.navigate("ErrorScreen");
           }}
         >
           <Text style={styles.buttonText}>Buscar</Text>
           <Icon name="search" size={30} style={styles.icon} />
         </TouchableOpacity>
-      </View>
-
-      <View style={styles.containerData}>
-        <Text style={styles.title}>Resultados</Text>
-        {data.map((item) => (
-          <View style={styles.card}>
-            <Text style={styles.cardLabel}>Nombre: </Text>
-            <Text style={styles.cardTextName}>
-              {item.user_id.name} {item.user_id.app} {item.user_id.apm}
-            </Text>
-          </View>
-        ))}
       </View>
     </ScrollView>
   );
@@ -130,9 +217,21 @@ const styles = StyleSheet.create({
     width: "100%",
     marginVertical: 20,
   },
+  hrBlack: {
+    borderBottomColor: "#fff",
+    borderBottomWidth: 1,
+    width: "100%",
+    marginVertical: 20,
+  },
   scroll: {
     padding: 20,
     marginTop: 35,
+    backgroundColor: "#fff",
+  },
+  scrollBlack: {
+    padding: 20,
+    marginTop: 35,
+    backgroundColor: "#000",
   },
   contentContainer: {
     paddingTop: 30,
@@ -183,7 +282,25 @@ const styles = StyleSheet.create({
     textAlign: "center",
     justifyContent: "center",
   },
+  titleBlack: {
+    fontSize: 25,
+    lineHeight: 30,
+    fontWeight: "bold",
+    marginBottom: 30,
+    alignContent: "center",
+    alignItems: "center",
+    textAlign: "center",
+    justifyContent: "center",
+    color: "#fff",
+  },
   text: {
+    fontSize: 18,
+    marginBottom: 10,
+    marginRight: 10,
+    textAlign: "center",
+    justifyContent: "center",
+  },
+  textBlack: {
     fontSize: 18,
     marginBottom: 10,
     marginRight: 10,
@@ -198,7 +315,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 10,
-    backgroundColor: "mediumseagreen",
+    backgroundColor: "#4169E1",
+  },
+  buttonBlack: {
+    padding: 15,
+    marginBottom: 20,
+    borderRadius: 5,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    backgroundColor: "#B8860B",
   },
   buttonStop: {
     padding: 15,
@@ -236,5 +363,14 @@ const styles = StyleSheet.create({
       width: 0,
       height: 2,
     },
+  },
+  spinnerTextStyle: {
+    color: "gray",
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 20,
   },
 });
