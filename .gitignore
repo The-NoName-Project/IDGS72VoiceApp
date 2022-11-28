@@ -1,6 +1,8 @@
 node_modules/
 .expo/
 dist/
+.yarn/
+.yarnrc.yml
 npm-debug.*
 *.jks
 *.p8
@@ -12,3 +14,4 @@ web-build/
 build-*
 # macOS
 .DS_Store
+.idea/

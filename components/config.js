@@ -1,1 +1,2 @@
-export const BASE_URL = "https://the-noname-project.herokuapp.com/api/top/user";
+// export const BASE_URL = "https://nameproject.tech/api/post";
+export const BASE_URL = "https://duf23.systems/api/blogs";

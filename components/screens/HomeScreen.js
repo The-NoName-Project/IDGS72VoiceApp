@@ -10,42 +10,12 @@ import {
 import React, { useEffect, useState } from "react";
 import Voice from "@react-native-voice/voice";
 import Icon from "react-native-vector-icons/FontAwesome";
-import { BASE_URL } from "../config";
-import axios from "axios";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function HomeScreen({ navigation }) {
   let [started, setStarted] = useState(false);
   let [results, setResults] = useState([]);
   const [info, setInfo] = useState(null);
-  const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [color, setColor] = useState(false);
-  // true or false
-
-  const getData = async () => {
-    setLoading(true);
-    await axios
-      .get(BASE_URL)
-      .then(function (res) {
-        const fetchData = res.data;
-        setData(fetchData);
-        setLoading(false);
-        AsyncStorage.setItem("data", JSON.stringify(fetchData));
-      })
-      .catch((err) => {
-        setLoading(false);
-        console.log(err);
-        navigation.navigate("ErrorScreen");
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  };
-
-  useEffect(() => {
-    getData();
-  });
+  // const [color, setColor] = useState(false);
 
   useEffect(() => {
     Voice.onSpeechError = onSpeechError;
@@ -68,71 +38,20 @@ export default function HomeScreen({ navigation }) {
 
   const onSpeechResults = (result) => {
     setResults(result.value);
+    //guarda los resultados en el async storage
+    const results = result.value;
+    const data = JSON.stringify(results);
+    AsyncStorage.setItem("results", data);
+    console.warn(results);
   };
 
   const onSpeechError = (error) => {
     console.log(error);
   };
 
-  // //guarda los resultados en una variable
-  // let text = results.map((result, index) => {
-  //   return result;
-  // });
-
-  // console.log(data);
-
-  //si el texto es igual a "usuarios" se ejecuta la funcion
-  if (info == "null") {
-    getData();
-  } else if (
-    info == "usuarios" ||
-    info == "usuario" ||
-    info == "user" ||
-    info == "Usuarios" ||
-    info == "Usuario" ||
-    info == "User"
-  ) {
-    //navega a la pantalla de resultados despues de 5 segundos y le pasa los resultados
-    navigation.navigate("Resultados");
-    setInfo(null);
-  } else if (info == "undefined") {
-    navigation.navigate("ErrorScreen");
-    setInfo(null);
-  }
-
-  //hace una comparacion y busqueda de coincidencias en la variable results
-  const search = () => {
-    let search = results.map((result, index) => {
-      return result;
-    });
-    let searchResult = data.filter((item) => {
-      return (
-        item.toLowerCase().includes("usuarios") ||
-        item.toLowerCase().includes("usuario")
-      );
-    });
-    if (searchResult.length > 0) {
-      setData(searchResult);
-    } else {
-      setData("undefined");
-    }
-  };
-
-  if (data == "null") {
-    getData();
-  } else if (data == {}) {
-    //navega a la pantalla de resultados despues de 5 segundos y le pasa los resultados
-    //lee los resultados y busca coincidencias
-    navigation.navigate("Resultados");
-    setData({});
-  } else if (data == "undefined") {
-    navigation.navigate("ErrorScreen");
-    setData({});
-  }
-
   return (
     <ScrollView
-      style={color ? styles.scroll : styles.scrollBlack}
+      style={styles.scroll}
       contentContainerStyle={{
         flexGrow: 1,
         justifyContent: "center",
@@ -141,14 +60,14 @@ export default function HomeScreen({ navigation }) {
         alignSelf: "center",
       }}
     >
-      <View style={styles.header}>
+      {/* <View style={styles.header}>
         <TouchableOpacity
           onPress={() => {
             setColor(!color);
           }}
         >
           <Icon
-            name={color ? "moon-o" : "sun-o"}
+            name={ "moon-o" : "sun-o"}
             size={30}
             color={color ? "black" : "white"}
             style={{
@@ -158,21 +77,15 @@ export default function HomeScreen({ navigation }) {
             }}
           />
         </TouchableOpacity>
-      </View>
+      </View> */}
       <View style={styles.container}>
-        <Text style={color ? styles.title : styles.titleBlack}>
-          Busqueda por reconocimiento de Voz
-        </Text>
-        <StatusBar style="dark" backgroundColor={color ? "#4169E1" : "white"} />
+        <Text style={styles.title}>Busqueda por reconocimiento de Voz</Text>
+        <StatusBar style="dark" backgroundColor={"#4169E1"} />
         <TouchableOpacity
           style={
-            color
-              ? started //si esta activo el boton cambia a rojo
-                ? styles.buttonStop
-                : styles.button
-              : started //si esta activo el boton cambia a rojo
+            started //si esta activo el boton cambia a rojo
               ? styles.buttonStop
-              : styles.buttonBlack
+              : styles.button
           }
           onPress={started ? stopSpeechToText : startSpeechToText}
         >
@@ -186,10 +99,8 @@ export default function HomeScreen({ navigation }) {
             style={styles.icon}
           />
         </TouchableOpacity>
-        <Text style={color ? styles.hr : styles.hrBlack} />
-        <Text style={color ? styles.title : styles.titleBlack}>
-          Busqueda por escrito
-        </Text>
+        <Text style={styles.hr} />
+        <Text style={styles.title}>Busqueda por escrito</Text>
         <TextInput
           style={styles.textInput}
           placeholder="Escribe aquí"
@@ -197,14 +108,27 @@ export default function HomeScreen({ navigation }) {
           value={info}
         />
         <TouchableOpacity
-          style={color ? styles.button : styles.buttonBlack}
+          style={styles.button}
           onPress={() => {
-            navigation.navigate("ErrorScreen");
+            if (info === null) {
+              navigation.navigate("ErrorScreen");
+            } else {
+              navigation.navigate("Resultados");
+            }
           }}
         >
           <Text style={styles.buttonText}>Buscar</Text>
           <Icon name="search" size={30} style={styles.icon} />
         </TouchableOpacity>
+
+        <View style={styles.card}>
+          <Text style={styles.title}>Resultados de la busqueda por voz</Text>
+          <Text style={styles.text}>
+            {results.map((result, index) => {
+              return `${result}`;
+            })}
+          </Text>
+        </View>
       </View>
     </ScrollView>
   );
@@ -271,6 +195,20 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: "300",
     fontStyle: "italic",
+  },
+  cardBlack: {
+    backgroundColor: "#000",
+    width: "100%",
+    padding: 20,
+    borderRadius: 10,
+    marginVertical: 10,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 12,
+    },
+    shadowOpacity: 0.58,
+    shadowRadius: 16.0,
   },
   title: {
     fontSize: 25,

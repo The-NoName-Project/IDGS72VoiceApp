@@ -1,24 +1,56 @@
-import { Text, View, StyleSheet, SafeAreaView, Dimensions } from "react-native";
+import {
+  Text,
+  View,
+  StyleSheet,
+  SafeAreaView,
+  Dimensions,
+  StatusBar,
+} from "react-native";
 import React, { useState, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Speech from "expo-speech";
 
 //recibe la data desde home screen
-export default function ResultadosScreen({ navigation }) {
+export default function ResultadosScreen({}) {
   const [data, setData] = useState({});
 
-  const getData = async () => {
-    try {
-      let data = await AsyncStorage.getItem("data");
-      data = JSON.parse(data);
-      // console.log("info: ", data);
-      if (data) {
-        setData(data);
-      }
-    } catch (e) {
-      console.log("error al obtener data", e);
-    }
-  };
+  // console.warn(data);
+  // const getData = async () => {
+  //   try {
+  //     const jsonValue = await AsyncStorage.getItem("results");
+  //     setData(jsonValue != null ? JSON.parse(jsonValue) : null);
+  //   } catch (e) {
+  //     console.log(e);
+  //   }
+  // };
+  // //si el async storage tiene datos, los guarda en la variable data
+  // useEffect(() => {
+  //   getData();
+  //   //si data tiene datos ejecuta la funcion
+  //   if (data) {
+  //     sendToApi();
+  //   }
+  // }, []);
+
+  // //manda los datos a la api
+  // const sendToApi = async () => {
+  //   try {
+  //     const response = await fetch("https://duf23.systems/api/blogs/", {
+  //       method: "GET",
+  //       headers: {
+  //         Accept: "application/json",
+  //         "Content-Type": "application/json",
+  //       },
+  //       body: JSON.stringify({
+  //         data,
+  //       }),
+  //     });
+  //     const json = await response.json();
+  //     console.log(json);
+  //   } catch (error) {
+  //     console.error(error);
+  //   }
+  // };
 
   // const speakText = () => {
   //   const options = {
@@ -42,17 +74,15 @@ export default function ResultadosScreen({ navigation }) {
   //   Speech.speak(welcome, options);
   // };
 
-  useEffect(() => {
-    getData();
-    // speakText();
-  }, []);
+  // useEffect(() => {
+  //   getData();
+  //   // speakText();
+  // }, []);
 
   return (
     <SafeAreaView style={styles.area}>
+      <StatusBar backgroundColor={"#4169E1"} />
       <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.headerText}>Resultados</Text>
-        </View>
         <View style={styles.body}>
           {data.length === undefined ? (
             <View style={styles.card}>
@@ -61,24 +91,6 @@ export default function ResultadosScreen({ navigation }) {
           ) : (
             <>
               <Text style={styles.cardTitle}>Los datos encontrados son: </Text>
-              {data.map((item, index) => (
-                <View style={styles.card} key={index}>
-                  <Text style={styles.cardText}>
-                    Nombre: {item.user_id.name} {item.user_id.app}{" "}
-                    {item.user_id.apm}
-                  </Text>
-                  <Text style={styles.cardText}>
-                    Estatus:
-                    {item.user_id.status === 1 ? "Inactivo" : "Activo"}
-                  </Text>
-                  <Text style={styles.cardText}>
-                    Escuela: {item.user_id.school_id.name}
-                  </Text>
-                  <Text style={styles.cardText}>
-                    Grado: {item.user_id.level_id.name}
-                  </Text>
-                </View>
-              ))}
             </>
           )}
         </View>
