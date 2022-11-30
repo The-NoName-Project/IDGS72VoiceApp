@@ -14,70 +14,51 @@ import * as Speech from "expo-speech";
 export default function ResultadosScreen({}) {
   const [data, setData] = useState({});
 
-  // console.warn(data);
-  // const getData = async () => {
-  //   try {
-  //     const jsonValue = await AsyncStorage.getItem("results");
-  //     setData(jsonValue != null ? JSON.parse(jsonValue) : null);
-  //   } catch (e) {
-  //     console.log(e);
-  //   }
-  // };
-  // //si el async storage tiene datos, los guarda en la variable data
-  // useEffect(() => {
-  //   getData();
-  //   //si data tiene datos ejecuta la funcion
-  //   if (data) {
-  //     sendToApi();
-  //   }
-  // }, []);
+  const getData = async () => {
+    try {
+      const jsonValue = await AsyncStorage.getItem("apiData");
+      // console.warn(jsonValue);
+      return jsonValue != null ? JSON.parse(jsonValue) : null;
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
-  // //manda los datos a la api
-  // const sendToApi = async () => {
-  //   try {
-  //     const response = await fetch("https://duf23.systems/api/blogs/", {
-  //       method: "GET",
-  //       headers: {
-  //         Accept: "application/json",
-  //         "Content-Type": "application/json",
-  //       },
-  //       body: JSON.stringify({
-  //         data,
-  //       }),
-  //     });
-  //     const json = await response.json();
-  //     console.log(json);
-  //   } catch (error) {
-  //     console.error(error);
-  //   }
-  // };
+  useEffect(() => {
+    getData().then((data) => {
+      setData(data);
+    });
+  }, []);
 
-  // const speakText = () => {
-  //   const options = {
-  //     language: "es-MX",
-  //     pitch: 1,
-  //     silenceLength: 0.5,
-  //     silenceLengthEnd: 1,
-  //   };
+  const createdAtFormatted = (date) => {
+    const dateObj = new Date(date);
+    const month = dateObj.toLocaleString("default", { month: "long" });
+    return `${month}`;
+  };
 
-  //   const welcome = `los resultados son: ${data.map(
-  //     (item) =>
-  //       `Nombre: ${item.user_id.name} ${item.user_id.app} ${
-  //         item.user_id.apm
-  //       }, Estatus: ${
-  //         item.user_id.status === 1 ? "Inactivo" : "Activo"
-  //       }, Escuela: ${item.user_id.school_id.name}, Grado: ${
-  //         item.user_id.level_id.name
-  //       }`
-  //   )}
-  //   resultado final`;
-  //   Speech.speak(welcome, options);
-  // };
+  const speakText = () => {
+    const options = {
+      language: "es-MX",
+      pitch: 1,
+      silenceLength: 0.5,
+      silenceLengthEnd: 1,
+    };
 
-  // useEffect(() => {
-  //   getData();
-  //   // speakText();
-  // }, []);
+    //si data es diferente de undefined entonces habla
+    if (data.length !== undefined) {
+      const welcome = `los resultados son: ${data.map(
+        (item) =>
+          `#${item.number}, Nombre del Caso: ${item.name}, Descripcion: ${item.description}
+        `
+      )}`;
+      Speech.speak(welcome, options);
+    }
+  };
+
+  useEffect(() => {
+    // getData();
+    speakText();
+  }, []);
 
   return (
     <SafeAreaView style={styles.area}>
@@ -90,7 +71,23 @@ export default function ResultadosScreen({}) {
             </View>
           ) : (
             <>
-              <Text style={styles.cardTitle}>Los datos encontrados son: </Text>
+              <Text style={styles.cardTitle}>
+                Los resultados encontrados son:{" "}
+              </Text>
+              {data.map((item, index) => (
+                <View style={styles.card} key={index}>
+                  <Text style={styles.cardNumber}>
+                    Numero de control: # {item.number}
+                  </Text>
+                  <Text style={styles.cardName}>Problema: {item.name}</Text>
+                  <Text style={styles.cardDescription}>
+                    Descripción: {item.description}
+                  </Text>
+                  <Text style={styles.cardCreatedAt}>
+                    Fecha de creación: {createdAtFormatted(item.created_at)}
+                  </Text>
+                </View>
+              ))}
             </>
           )}
         </View>
@@ -155,5 +152,23 @@ const styles = StyleSheet.create({
   cardText: {
     fontSize: 18,
     color: "#000",
+  },
+  cardNumber: {
+    fontSize: 18,
+    color: "#000",
+    fontWeight: "bold",
+  },
+  cardName: {
+    fontSize: 20,
+    color: "#000",
+  },
+  cardDescription: {
+    fontSize: 16,
+    color: "#000",
+    textAlign: "justify",
+  },
+  cardCreatedAt: {
+    fontSize: 16,
+    fontWeight: "italic",
   },
 });
