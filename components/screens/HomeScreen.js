@@ -7,17 +7,19 @@ import {
   ScrollView,
   TouchableOpacity,
 } from "react-native";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import Voice from "@react-native-voice/voice";
 import Icon from "react-native-vector-icons/FontAwesome";
 import { API } from "../config";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import Spinner from "react-native-loading-spinner-overlay";
 
 export default function HomeScreen({ navigation }) {
   let [started, setStarted] = useState(false);
   let [results, setResults] = useState([]);
   const [info, setInfo] = useState(null);
+  const [isLoading, setLoading] = useState(false);
   // const [color, setColor] = useState(false);
 
   useEffect(() => {
@@ -37,6 +39,8 @@ export default function HomeScreen({ navigation }) {
   const stopSpeechToText = async () => {
     await Voice.stop();
     setStarted(false);
+    //ejecuta la funcion de buscar
+    getApiData();
   };
 
   const onSpeechResults = (result) => {
@@ -69,40 +73,51 @@ export default function HomeScreen({ navigation }) {
     });
   }, []);
 
-  const getApiData = async () => {
+  //si info es diferente de null, entonces se hace la petición a la API
+
+  const getApiData = () => {
+    setLoading(true);
     //manda los resultados a la voz a la api usando solamente el primer resultado
-    await axios
+    axios
       .get(API + info[0])
       .then((response) => {
         const data = JSON.stringify(response.data);
         AsyncStorage.setItem("apiData", data);
         // console.log(data);
         navigation.navigate("Resultados");
+        setLoading(false);
       })
       .catch((error) => {
         console.log(error);
+        setLoading(false);
+        navigation.navigate("ErrorScreen");
       });
   };
 
   useEffect(() => {
-    getApiData();
+    if (info !== null) {
+      getApiData();
+    }
   }, []);
 
   //recibe info del input y lo manda a la api en la ruta /blogs
-  const sendInfo = async (data) => {
-    console.log(data);
-    await axios
+  const sendInfo = (data) => {
+    // console.log(data);
+    setLoading(true);
+    axios
       .get(API + data)
       .then((response) => {
         const info = response.data;
         // console.log(info);
         AsyncStorage.setItem("apiData", JSON.stringify(info));
         navigation.navigate("Resultados");
+        setLoading(false);
       })
       .catch((error) => {
         console.error(error);
         //navega a la pantalla de error
         navigation.navigate("ErrorScreen");
+        setLoading(false);
       });
   };
 
@@ -135,6 +150,7 @@ export default function HomeScreen({ navigation }) {
           />
         </TouchableOpacity>
       </View> */}
+      <Spinner visible={isLoading} textContent={"Cargando..."} />
       <View style={styles.container}>
         <Text style={styles.title}>Busqueda por reconocimiento de Voz</Text>
         <StatusBar style="dark" backgroundColor={"#4169E1"} />
@@ -178,7 +194,6 @@ export default function HomeScreen({ navigation }) {
           <Text style={styles.buttonText}>Buscar</Text>
           <Icon name="search" size={30} style={styles.icon} />
         </TouchableOpacity>
-
         {/* <View style={styles.card}>
           <Text style={styles.title}>Resultados de la busqueda por voz</Text>
           <Text style={styles.text}>

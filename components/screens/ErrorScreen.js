@@ -1,7 +1,15 @@
 import { View, Text, SafeAreaView, Image, StyleSheet } from "react-native";
-import React from "react";
+import React, { useEffect } from "react";
 
 export default function ErrorScreen({ navigation }) {
+  //limpia el async storage
+  const clearAsyncStorage = async () => {
+    AsyncStorage.clear();
+  };
+  useEffect(() => {
+    clearAsyncStorage();
+  }, []);
+
   return (
     <SafeAreaView style={styles.area}>
       <View style={styles.container}>
